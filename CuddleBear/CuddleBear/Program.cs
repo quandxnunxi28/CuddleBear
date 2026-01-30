@@ -1,4 +1,4 @@
-using CuddleBear.Models;
+﻿using CuddleBear.Models;
 using CuddleBear.Repository;
 using CuddleBear.Service;
 using Microsoft.IdentityModel.Tokens;
@@ -45,6 +45,8 @@ builder.Services.AddAuthentication("Bearer")
         )
     };
 });
+
+
 
 
 

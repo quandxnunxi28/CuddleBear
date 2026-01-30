@@ -5,15 +5,17 @@ import { useAuthStore } from '../store/authStore';
 // Khi production, thay đổi BASE_URL sang domain thực
 const API_BASE_URL = '/api';
 
-const axiosClient = axios.create({
+// ✅ Axios client riêng dành cho Cart - có withCredentials để gửi/nhận cookies
+const cartAxiosClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Cho phép gửi/nhận cookies
 });
 
 // Request interceptor
-axiosClient.interceptors.request.use(
+cartAxiosClient.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
     if (token) {
@@ -25,7 +27,7 @@ axiosClient.interceptors.request.use(
 );
 
 // Response interceptor
-axiosClient.interceptors.response.use(
+cartAxiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
@@ -36,4 +38,4 @@ axiosClient.interceptors.response.use(
   }
 );
 
-export default axiosClient;
+export default cartAxiosClient;

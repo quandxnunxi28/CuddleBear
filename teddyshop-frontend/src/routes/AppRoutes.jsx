@@ -4,6 +4,7 @@ import { LoginPage } from '../pages/auth/Login';
 import { RegisterPage } from '../pages/auth/Register';
 import { ProductsPage } from '../pages/Products';
 import { ProductDetailPage } from '../pages/ProductDetail';
+import { CartPage } from '../pages/Cart';
 import { ProtectedRoute, AdminRoute, PublicRoute } from '../middleware/ProtectedRoute';
 
 export function AppRoutes() {
@@ -33,14 +34,7 @@ export function AppRoutes() {
       {/* Protected Routes (coming soon) */}
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/products/:id" element={<ProductDetailPage />} />
-      {/* <Route
-        path="/cart"
-        element={
-          <ProtectedRoute>
-            <CartPage />
-          </ProtectedRoute>
-        }
-      /> */}
+      <Route path="/cart" element={<CartPage />} />
       {/* <Route
         path="/orders"
         element={

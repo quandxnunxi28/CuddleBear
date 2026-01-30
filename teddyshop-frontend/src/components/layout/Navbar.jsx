@@ -1,10 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useCartStore } from '../../store/cartStore';
+import { ShoppingCart } from 'lucide-react';
 
 function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
+  const cartItems = useCartStore((state) => state.cartItems);
+  const getTotalItems = useCartStore((state) => state.getTotalItems);
 
   const handleLogout = () => {
     logout();
@@ -30,6 +34,23 @@ function Navbar() {
             <li className="nav-item">
               <Link className="nav-link" to="/">
                 Home
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/products">
+                Products
+              </Link>
+            </li>
+            {/* 🛒 Cart - Visible for both guest and authenticated */}
+            <li className="nav-item">
+              <Link className="nav-link position-relative" to="/cart">
+                <ShoppingCart size={20} />
+                Cart
+                {getTotalItems() > 0 && (
+                  <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {getTotalItems()}
+                  </span>
+                )}
               </Link>
             </li>
             {isAuthenticated ? (

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productAPI } from '../api/authApi';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
 import { Loading, Alert, Button } from '../components/ui';
 import { Star, ShoppingCart, ArrowLeft } from 'lucide-react';
 
@@ -12,7 +13,9 @@ export function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { addToCart } = useCartStore();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -32,11 +35,7 @@ export function ProductDetailPage() {
     fetchProduct();
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
+  const handleAddToCart = async () => {
     if (product.stock === 0) {
       setAlert({
         type: 'error',
@@ -44,11 +43,62 @@ export function ProductDetailPage() {
       });
       return;
     }
-    setAlert({
-      type: 'success',
-      message: `Added ${quantity} ${product.name} to cart!`,
-    });
-    setQuantity(1);
+
+    // 🔍 Check quantity trong cart
+    const cartItems = useCartStore.getState().cartItems;
+    const existingItem = cartItems.find(item => item.productId === product.id);
+    const totalQuantity = (existingItem?.quantity || 0) + quantity;
+
+    // ✅ Validate: total quantity không vượt quá stock
+    if (totalQuantity > product.stock) {
+      setAlert({
+        type: 'error',
+        message: `Cannot add. You already have ${existingItem?.quantity || 0} in cart. Only ${product.stock - (existingItem?.quantity || 0)} more available.`,
+      });
+      return;
+    }
+
+    setAddingToCart(true);
+    try {
+      console.log('Adding to cart:', {
+        productId: product.id,
+        quantity,
+        existingQuantity: existingItem?.quantity || 0,
+        totalQuantity,
+        stock: product.stock,
+      });
+
+      const success = await addToCart(
+        product.id,
+        quantity,
+        product.name,
+        product.price,
+        product.imageUrl
+      );
+
+      console.log('Add to cart result:', success);
+
+      if (success) {
+        setAlert({
+          type: 'success',
+          message: `Added ${quantity} ${product.name} to cart!`,
+        });
+        setQuantity(1);
+      } else {
+        setAlert({
+          type: 'error',
+          message: 'Failed to add product to cart',
+        });
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      setAlert({
+        type: 'error',
+        message: error.message || 'Failed to add product to cart',
+      });
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   if (loading) return <Loading />;
@@ -177,38 +227,62 @@ export function ProductDetailPage() {
                 <div className="flex items-center gap-3 border border-gray-300 rounded-lg">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-900 transition"
+                    className="px-4 py-2 text-gray-600 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed transition"
+                    disabled={quantity <= 1}
                   >
                     −
                   </button>
-                  <span className="px-4 py-2 font-semibold">{quantity}</span>
+                  <span className="px-4 py-2 font-semibold min-w-[3rem] text-center">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-900 transition"
+                    onClick={() => {
+                      // 🔍 Check quantity trong cart
+                      const cartItems = useCartStore.getState().cartItems;
+                      const existingItem = cartItems.find(item => item.productId === product.id);
+                      const cartQuantity = existingItem?.quantity || 0;
+                      const maxAvailable = product.stock - cartQuantity;
+
+                      // ✅ Cho phép tăng nếu chưa đạt max
+                      if (quantity < maxAvailable) {
+                        setQuantity(quantity + 1);
+                      }
+                    }}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed transition"
+                    disabled={(() => {
+                      const cartItems = useCartStore.getState().cartItems;
+                      const existingItem = cartItems.find(item => item.productId === product.id);
+                      const cartQuantity = existingItem?.quantity || 0;
+                      const maxAvailable = product.stock - cartQuantity;
+                      return quantity >= maxAvailable;
+                    })()}
                   >
                     +
                   </button>
                 </div>
+                <span className="text-sm text-gray-600">
+                  {(() => {
+                    const cartItems = useCartStore.getState().cartItems;
+                    const existingItem = cartItems.find(item => item.productId === product.id);
+                    const cartQuantity = existingItem?.quantity || 0;
+                    const maxAvailable = product.stock - cartQuantity;
+                    return cartQuantity > 0
+                      ? `/ ${maxAvailable} more available (${cartQuantity} in cart)`
+                      : `/ ${product.stock} available`;
+                  })()}
+                </span>
               </div>
 
               <Button
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={product.stock === 0 || addingToCart}
                 className={`w-full ${
-                  product.stock === 0
+                  product.stock === 0 || addingToCart
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-primary-600 hover:bg-primary-700'
                 } text-white py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2`}
               >
                 <ShoppingCart size={20} />
-                {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                {addingToCart ? 'Adding...' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
               </Button>
-
-              {!isAuthenticated && (
-                <p className="text-sm text-gray-600 text-center">
-                  Please log in to add items to your cart
-                </p>
-              )}
             </div>
           </div>
         </div>
