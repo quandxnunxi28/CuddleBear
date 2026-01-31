@@ -46,10 +46,22 @@ export function Header() {
             </Link>
 
             {isAuthenticated && (
-              <Link to="/Checkout" className="text-gray-700 hover:text-primary-600 font-medium">
-                Orders
-              </Link>
-            )}
+  <>
+    <Link
+      to="/checkout"
+      className="text-gray-700 hover:text-primary-600 font-medium"
+    >
+      Checkout
+    </Link>
+
+    <Link
+      to="/order"
+      className="text-gray-700 hover:text-primary-600 font-medium"
+    >
+      Order History
+    </Link>
+  </>
+)}
           </div>
 
           {/* Auth Section */}

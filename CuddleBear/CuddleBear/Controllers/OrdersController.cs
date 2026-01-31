@@ -1,29 +1,23 @@
-﻿using Azure.Core;
-using CuddleBear.Models;
+﻿using CuddleBear.Models;
 using CuddleBear.Service;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Security.Claims;
 
 namespace CuddleBear.Controllers
 {
+    [Route("api/order")]
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]  
-    public class CheckoutController : ControllerBase
+    [Authorize]
+    public class OrdersController : ControllerBase
     {
         private readonly BearShopDbContext _context;
         private readonly IOrderService _orderService;
-        public CheckoutController(IOrderService orderService, BearShopDbContext context )
+        public OrdersController(IOrderService orderService, BearShopDbContext context)
         {
             _orderService = orderService;
             _context = context;
-        }
-        public class CreateOrderDto
-        {
-            public string ShippingAddress { get; set; } = "";
-            public List<OrderItem> Items { get; set; } = new();
         }
         [HttpPost]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
@@ -62,13 +56,35 @@ namespace CuddleBear.Controllers
             });
         }
         [HttpGet("my-orders")]
-        public async Task<IActionResult> MyOrders()
+        public IActionResult GetMyOrders()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var userId = int.Parse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!
+            );
 
-            var orders = await _orderService.GetOrdersByUserAsync(userId);
+            var orders = _context.Orders
+                .Where(o => o.UserId == userId)
+                .OrderByDescending(o => o.CreatedAt)
+                .Select(o => new
+                {
+                    o.Id,
+                    o.CreatedAt,
+                    o.TotalAmount,
+                    o.Status,
+                    o.StatusFee,
+                    o.ShippingAddress,
+                    Items = o.OrderItems.Select(i => new
+                    {
+                        i.ProductName,
+                        i.Quantity,
+                        i.Price
+                    })
+                })
+                .ToList();
 
             return Ok(orders);
         }
+
     }
+
 }

@@ -2,15 +2,18 @@ import { useEffect, useState } from "react";
 import { useCartStore } from "../store/cartStore";
 import { orderApi } from "../api/orderApi";
 import "./Checkout.css";
+import { useNavigate } from "react-router-dom";
 
 export default function Checkout() {
   // Cart store
+  const navigate = useNavigate();
   const cartItems = useCartStore(state => state.cartItems);
   const fetchCart = useCartStore(state => state.fetchCart);
   const getTotalPrice = useCartStore(state => state.getTotalPrice);
   const clearCart = useCartStore(state => state.clearCart);
 
   // Address states
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
@@ -52,34 +55,50 @@ export default function Checkout() {
 
   // Handle order
   const handleOrder = async () => {
-    if (!selectedProvince || !selectedDistrict || !selectedWard || !detailAddress) {
-      alert("Vui lòng nhập đầy đủ địa chỉ giao hàng");
-      return;
-    }
+  // 1. Validate dữ liệu
+  if (
+    !selectedProvince ||
+    !selectedDistrict ||
+    !selectedWard ||
+    !detailAddress ||
+    !paymentMethod
+  ) {
+    alert("Vui lòng nhập đầy đủ địa chỉ và phương thức thanh toán");
+    return;
+  }
 
-    const provinceName = provinces.find(p => p.code == selectedProvince)?.name;
-    const districtName = districts.find(d => d.code == selectedDistrict)?.name;
-    const wardName = wards.find(w => w.code == selectedWard)?.name;
+  // 2. Lấy tên địa chỉ
+  const provinceName = provinces.find(p => p.code == selectedProvince)?.name;
+  const districtName = districts.find(d => d.code == selectedDistrict)?.name;
+  const wardName = wards.find(w => w.code == selectedWard)?.name;
 
-    const fullAddress = `${detailAddress}, ${wardName}, ${districtName}, ${provinceName}`;
+  // 3. Ghép địa chỉ đầy đủ
+  const fullAddress = `${detailAddress}, ${wardName}, ${districtName}, ${provinceName}`;
 
-    try {
-      const res = await orderApi.createOrder({
-        shippingAddress: fullAddress,
-        items: cartItems.map(item => ({
-          productName: item.productName,
-          quantity: item.quantity,
-          price: item.price
-        }))
-      });
-
-      alert("Đặt hàng thành công!");
-      clearCart();
-    } catch (err) {
-      console.error(err);
-      alert("Đặt hàng thất bại");
-    }
+  // 4. Tạo object Order gửi backend
+  const orderPayload = {
+    shippingAddress: fullAddress,
+    paymentMethod: paymentMethod,      // 👈 THÊM
+    totalPrice: getTotalPrice(),        // 👈 NÊN CÓ
+    items: cartItems.map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      price: item.price
+    }))
   };
+
+  try {
+    await orderApi.createOrder(orderPayload);
+    alert("Đặt hàng thành công!");
+    clearCart();
+    navigate("/order");
+  } catch (err) {
+    console.error(err);
+    alert("Đặt hàng thất bại");
+  }
+};
+
 
   return (
     <div className="checkout-container">
@@ -161,7 +180,31 @@ export default function Checkout() {
           onChange={(e) => setDetailAddress(e.target.value)}
         />
       </div>
+<div className="payment-group">
+  <h4>Phương thức thanh toán</h4>
 
+  <label>
+    <input
+      type="radio"
+      name="payment"
+      value="COD"
+      checked={paymentMethod === "COD"}
+      onChange={(e) => setPaymentMethod(e.target.value)}
+    />
+    Thanh toán khi nhận hàng (COD)
+  </label>
+
+  <label>
+    <input
+      type="radio"
+      name="payment"
+      value="BANKING"
+      checked={paymentMethod === "BANKING"}
+      onChange={(e) => setPaymentMethod(e.target.value)}
+    />
+    Chuyển khoản ngân hàng
+  </label>
+</div>
       <button className="order-btn" onClick={handleOrder}>
         Đặt hàng
       </button>

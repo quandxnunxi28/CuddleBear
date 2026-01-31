@@ -96,6 +96,8 @@ namespace CuddleBear.Controllers
         {
             var claims = new[]
             {
+                //Id
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), 
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.Role, user.Role.Name)
         };
