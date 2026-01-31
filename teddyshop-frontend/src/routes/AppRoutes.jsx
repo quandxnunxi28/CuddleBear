@@ -6,6 +6,7 @@ import { ProductsPage } from '../pages/Products';
 import { ProductDetailPage } from '../pages/ProductDetail';
 import { CartPage } from '../pages/Cart';
 import { ProtectedRoute, AdminRoute, PublicRoute } from '../middleware/ProtectedRoute';
+import Checkout from "../pages/Checkout";
 
 export function AppRoutes() {
   return (
@@ -35,6 +36,7 @@ export function AppRoutes() {
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/products/:id" element={<ProductDetailPage />} />
       <Route path="/cart" element={<CartPage />} />
+      <Route path="/checkout" element={<Checkout />} /> 
       {/* <Route
         path="/orders"
         element={
