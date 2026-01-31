@@ -48,7 +48,6 @@ public partial class BearShopDbContext : DbContext
         return configuration["ConnectionStrings:MyCnn"];
     }
 
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Cart>(entity =>
@@ -101,6 +100,7 @@ public partial class BearShopDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Pending");
+            entity.Property(e => e.StatusFee).HasMaxLength(50);
             entity.Property(e => e.TotalAmount).HasColumnType("decimal(18, 2)");
 
             entity.HasOne(d => d.User).WithMany(p => p.Orders)

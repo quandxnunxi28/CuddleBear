@@ -1,0 +1,43 @@
+.order-history {
+  max-width: 800px;
+  margin: auto;
+}
+
+.order-card {
+  border: 1px solid #ddd;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.status.PENDING {
+  background: orange;
+  color: white;
+}
+
+.status.PAID {
+  background: green;
+  color: white;
+}
+
+.order-items {
+  margin-top: 10px;
+}
+
+.order-total {
+  text-align: right;
+  font-weight: bold;
+  margin-top: 10px;
+}
