@@ -1,90 +1,197 @@
-﻿using CuddleBear.Models;
+﻿using System.Security.Claims;
+using CuddleBear.Models;
 using CuddleBear.Service;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using PayOS.Models.Webhooks;
 
-namespace CuddleBear.Controllers
+[Route("api/order")]
+[ApiController]
+[Authorize]
+public class OrdersController : ControllerBase
 {
-    [Route("api/order")]
-    [ApiController]
-    [Authorize]
-    public class OrdersController : ControllerBase
+    private readonly BearShopDbContext _context;
+    private readonly IPayOSService _payOSService;
+
+    public OrdersController(
+        BearShopDbContext context,
+        IPayOSService payOSService
+    )
     {
-        private readonly BearShopDbContext _context;
-        private readonly IOrderService _orderService;
-        public OrdersController(IOrderService orderService, BearShopDbContext context)
+        _context = context;
+        _payOSService = payOSService;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
+    {
+        var userId = int.Parse(
+            User.FindFirstValue(ClaimTypes.NameIdentifier)!
+        );
+
+        var order = new Order
         {
-            _orderService = orderService;
-            _context = context;
+            UserId = userId,
+            ShippingAddress = request.ShippingAddress,
+            TotalAmount = request.TotalPrice,
+
+            // trạng thái giao hàng
+            Status = "PENDING",
+
+            // trạng thái thanh toán
+            StatusFee = request.PaymentMethod == "COD"
+                ? "COD"
+                : "UNPAID",
+
+            CreatedAt = DateTime.Now
+        };
+
+        foreach (var item in request.Items)
+        {
+            order.OrderItems.Add(new OrderItem
+            {
+                ProductName = item.ProductName,
+                Quantity = item.Quantity,
+                Price = item.Price
+            });
         }
-        [HttpPost]
-        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
+
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
+
+        // 👉 PAYOS
+        if (request.PaymentMethod == "BANKING")
         {
-            var userId = int.Parse(
-        User.FindFirstValue(ClaimTypes.NameIdentifier)!
-    );
-
-            var order = new Order
-            {
-                UserId = userId,
-                ShippingAddress = request.ShippingAddress,
-                TotalAmount = request.TotalPrice,
-                Status = "PENDING",
-                StatusFee = request.PaymentMethod,
-                CreatedAt = DateTime.Now
-            };
-
-            foreach (var item in request.Items)
-            {
-                order.OrderItems.Add(new OrderItem
-                {
-                    ProductName = item.ProductName,
-                    Quantity = item.Quantity,
-                    Price = item.Price
-                });
-            }
-
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            var payment = await _payOSService.CreatePaymentAsync(
+                order.Id,
+                (int)order.TotalAmount
+            );
 
             return Ok(new
             {
-                message = "Create order success",
-                orderId = order.Id
+                orderId = order.Id,
+                checkoutUrl = payment.CheckoutUrl,
+                qrCode = payment.QrCode
             });
         }
-        [HttpGet("my-orders")]
-        public IActionResult GetMyOrders()
+
+        // 👉 COD
+        return Ok(new
         {
-            var userId = int.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!
-            );
+            orderId = order.Id
+        });
+    }
 
-            var orders = _context.Orders
-                .Where(o => o.UserId == userId)
-                .OrderByDescending(o => o.CreatedAt)
-                .Select(o => new
+    [HttpGet("my-orders")]
+    public IActionResult GetMyOrders()
+    {
+        var userId = int.Parse(
+            User.FindFirstValue(ClaimTypes.NameIdentifier)!
+        );
+
+        var orders = _context.Orders
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt)
+            .Select(o => new
+            {
+                o.Id,
+                o.CreatedAt,
+                o.TotalAmount,
+                o.Status,
+                o.StatusFee,
+                o.ShippingAddress,
+                Items = o.OrderItems.Select(i => new
                 {
-                    o.Id,
-                    o.CreatedAt,
-                    o.TotalAmount,
-                    o.Status,
-                    o.StatusFee,
-                    o.ShippingAddress,
-                    Items = o.OrderItems.Select(i => new
-                    {
-                        i.ProductName,
-                        i.Quantity,
-                        i.Price
-                    })
+                    i.ProductName,
+                    i.Quantity,
+                    i.Price
                 })
-                .ToList();
+            })
+            .ToList();
 
-            return Ok(orders);
+        return Ok(orders);
+    }
+    [HttpPost("payos/webhook")]
+    [AllowAnonymous]
+    public async Task<IActionResult> PayOSWebhook([FromBody] Webhook webhook)
+    {
+        WebhookData data;
+
+        try
+        {
+            data = await _payOSService.VerifyWebhookAsync(webhook);
+            Console.WriteLine("Webhook verified successfully : "+data);
+        }
+        catch
+        {
+            // ❌ Sai chữ ký
+            return BadRequest("Invalid webhook");
         }
 
+        // ✅ Thanh toán thành công
+        if (data.Code == "00")
+        {
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.Id == data.OrderCode);
+
+            if (order != null && order.StatusFee != "PAID")
+            {
+                order.StatusFee = "PAID";
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        return Ok();
     }
+
+    [HttpGet("check-payment/{orderId}")]
+    [Authorize] // Bắt buộc user đã login
+    public async Task<IActionResult> CheckPayment(int orderId)
+    {
+        // Lấy userId từ token
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        // Lấy order từ DB, kiểm tra xem có thuộc user không
+        var order = await _context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
+
+        if (order == null)
+            return NotFound("Order không tồn tại hoặc không thuộc user");
+
+        // Nếu order thanh toán COD -> luôn trả PAID
+        if (order.StatusFee == "COD")
+        {
+            return Ok(new { status = "PAID" });
+        }
+
+        // Nếu order BANKING và chưa thanh toán -> gọi PayOS API check
+        if (order.StatusFee == "UNPAID")
+        {
+            try
+            {
+                var paymentStatus = await _payOSService.GetPaymentStatusAsync(orderId);
+
+                // Nếu thanh toán thành công
+                if (paymentStatus.Code?.ToString() == "00")
+                {
+                    order.StatusFee = "PAID";
+                    await _context.SaveChangesAsync();
+                    return Ok(new { status = "PAID" });
+                }
+            }
+            catch
+            {
+                // lỗi gọi PayOS -> vẫn trả UNPAID
+                return Ok(new { status = "UNPAID" });
+            }
+        }
+
+        // Trả về trạng thái hiện tại
+        return Ok(new { status = order.StatusFee == "PAID" ? "PAID" : "UNPAID" });
+    }
+
+
 
 }

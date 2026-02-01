@@ -24,6 +24,7 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<BearShopDbContext, BearShopDbContext>();
+builder.Services.AddScoped<IPayOSService, PayOSService>();
 
 
 builder.Services.AddCors(options =>
