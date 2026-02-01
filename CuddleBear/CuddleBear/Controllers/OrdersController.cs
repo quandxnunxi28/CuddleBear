@@ -42,7 +42,7 @@ public class OrdersController : ControllerBase
             // trạng thái thanh toán
             StatusFee = request.PaymentMethod == "COD"
                 ? "COD"
-                : "UNPAID",
+                : "CANCEL",
 
             CreatedAt = DateTime.Now
         };
@@ -146,11 +146,17 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("check-payment/{orderId}")]
-    [Authorize] // Bắt buộc user đã login
+    [AllowAnonymous]
+    // Bắt buộc user đã login
     public async Task<IActionResult> CheckPayment(int orderId)
     {
         // Lấy userId từ token
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdClaim))
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim);
+
 
         // Lấy order từ DB, kiểm tra xem có thuộc user không
         var order = await _context.Orders
@@ -167,7 +173,7 @@ public class OrdersController : ControllerBase
         }
 
         // Nếu order BANKING và chưa thanh toán -> gọi PayOS API check
-        if (order.StatusFee == "UNPAID")
+        if (order.StatusFee == "CANCEL")
         {
             try
             {
@@ -183,13 +189,13 @@ public class OrdersController : ControllerBase
             }
             catch
             {
-                // lỗi gọi PayOS -> vẫn trả UNPAID
-                return Ok(new { status = "UNPAID" });
+                // lỗi gọi PayOS -> vẫn trả CANCEL
+                return Ok(new { status = "CANCEL" });
             }
         }
 
         // Trả về trạng thái hiện tại
-        return Ok(new { status = order.StatusFee == "PAID" ? "PAID" : "UNPAID" });
+        return Ok(new { status = order.StatusFee == "PAID" ? "PAID" : "CANCEL" });
     }
 
 

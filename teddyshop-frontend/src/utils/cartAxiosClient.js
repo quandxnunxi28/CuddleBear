@@ -3,14 +3,12 @@ import { useAuthStore } from '../store/authStore';
 
 // ✅ Khi development, dùng /api và Vite proxy sẽ forward tới backend
 // Khi production, thay đổi BASE_URL sang domain thực
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'https://cuddleshop-c7g8e3exb6eqa8dq.southeastasia-01.azurewebsites.net/api';
 
 // ✅ Axios client riêng dành cho Cart - có withCredentials để gửi/nhận cookies
 const cartAxiosClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+
   withCredentials: true, // Cho phép gửi/nhận cookies
 });
 

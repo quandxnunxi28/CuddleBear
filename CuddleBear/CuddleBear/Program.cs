@@ -29,11 +29,12 @@ builder.Services.AddScoped<IPayOSService, PayOSService>();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        policy =>
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod());
+    options.AddPolicy("AllowReact", policy =>
+        policy.WithOrigins("https://shopgau.vercel.app") // exact frontend
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()
+    );
 });
 builder.Services.AddAuthentication("Bearer")
 .AddJwtBearer("Bearer", options =>
@@ -50,14 +51,23 @@ builder.Services.AddAuthentication("Bearer")
 });
 
 
-
-
-
 var app = builder.Build();
+
+app.UseCors("AllowReact");
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == HttpMethods.Options)
+    {
+        context.Response.StatusCode = 200;
+        return;
+    }
+    await next();
+});
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors("AllowAll");
+//app.UseCors("AllowReact");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

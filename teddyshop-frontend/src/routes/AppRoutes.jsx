@@ -34,14 +34,14 @@ export function AppRoutes() {
           </PublicRoute>
         }
       />
-<Route path="/payment-success" element={<PaymentSuccess />} />
-<Route path="/payment-cancel" element={<PaymentCancel />} />
+      <Route path="/payment-success" element={<PaymentSuccess />} />
+      <Route path="/payment-cancel" element={<PaymentCancel />} />
 
       {/* Protected Routes (coming soon) */}
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/products/:id" element={<ProductDetailPage />} />
       <Route path="/cart" element={<CartPage />} />
-      <Route path="/checkout" element={<Checkout />} /> 
+      <Route path="/checkout" element={<Checkout />} />
       <Route path="/order" element={<OrderHistory />} />
       {/* <Route
         path="/orders"

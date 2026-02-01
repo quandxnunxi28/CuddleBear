@@ -25,10 +25,11 @@ namespace CuddleBear.Controllers
         {
             var options = new CookieOptions
             {
+
                 Expires = DateTime.Now.AddDays(7),
-                HttpOnly = true,
-                Secure = false, // true nếu HTTPS
-                SameSite = SameSiteMode.Lax
+                HttpOnly = false,
+                Secure = true, // true nếu HTTPS
+                SameSite = SameSiteMode.None,
             };
 
             Response.Cookies.Append(
