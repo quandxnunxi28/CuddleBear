@@ -131,10 +131,10 @@ export function ProductDetailPage() {
 
   // Category map
   const categoryMap = {
-    1: 'Gấu Teddy',
-    2: 'Gấu Hoạt Hình',
-    3: 'Gấu Đôi',
-    4: 'Gấu Sinh Nhật',
+    1: 'Bó hoa gấu',
+    2: 'Túi gấu & Hộp gấu mica',
+    3: 'Baby Three',
+    4: 'Gấu treo tường',
   };
 
   return (
@@ -166,7 +166,11 @@ export function ProductDetailPage() {
           {/* Product Image */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <img
-              src={product.imageUrl || 'https://via.placeholder.com/400'}
+              src={
+  import.meta.env.VITE_API_URL
+    ? `${import.meta.env.VITE_API_URL}/${product.imageUrl.replace(/^\//, '')}`
+    : product.imageUrl
+}
               alt={product.name}
               className="w-full h-96 object-cover"
             />

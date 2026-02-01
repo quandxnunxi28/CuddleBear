@@ -56,10 +56,10 @@ export function ProductsPage() {
 
   // Category map
   const categoryMap = {
-    1: 'Gấu Teddy',
-    2: 'Gấu Hoạt Hình',
-    3: 'Gấu Đôi',
-    4: 'Gấu Sinh Nhật',
+    1: 'Bó hoa gấu',
+    2: 'Túi gấu & Hộp gấu mica',
+    3: 'Baby Three',
+    4: 'Gấu treo tường',
   };
 
   // Get unique categories from active products

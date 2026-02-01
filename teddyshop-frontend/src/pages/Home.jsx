@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { productAPI } from '../api/authApi';
 import { Loading, Alert } from '../components/ui';
 import { ProductCard } from '../components/product/ProductCard';
+import BannerImg from '../components/layout/image/img2.jpg';
+
 
 export function HomePage() {
   const [products, setProducts] = useState([]);
@@ -32,20 +34,35 @@ export function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-rose-600 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold mb-4">Welcome to CuddleBear 🧸</h1>
-          <p className="text-xl text-white/90 mb-8">
-            Discover the coziest teddy bears and cuddle buddies
-          </p>
-          <Link
-            to="/products"
-            className="bg-white text-primary-600 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition"
-          >
-            Shop Now
-          </Link>
-        </div>
-      </section>
+     <section
+  className="relative w-full h-[480px] md:h-[650px] flex items-center justify-center text-white"
+>
+  {/* Background Image */}
+  <div
+    className="absolute inset-0 bg-cover bg-center"
+    style={{ backgroundImage: `url(${BannerImg})` }}
+  ></div>
+
+  {/* Overlay mờ */}
+  <div className="absolute inset-0 bg-pink-300/50"></div>
+
+  {/* Text Content */}
+  <div className="relative text-center px-4 max-w-3xl">
+    <h1 className="text-5xl font-bold mb-4 drop-shadow-lg">
+      Welcome to CuddleBear 🧸
+    </h1>
+    <p className="text-xl text-white/90 mb-8 drop-shadow-md">
+      Discover the coziest teddy bears and cuddle buddies
+    </p>
+    <Link
+      to="/products"
+      className="bg-white text-primary-600 px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition"
+    >
+      Shop Now
+    </Link>
+  </div>
+</section>
+
 
       {/* Featured Products */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

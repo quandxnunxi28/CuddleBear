@@ -56,7 +56,7 @@ builder.Services.AddAuthentication("Bearer")
 var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseStaticFiles();
 app.UseCors("AllowAll");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

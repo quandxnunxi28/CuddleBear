@@ -3,6 +3,8 @@ import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
 import { Menu, X, ShoppingCart, User, LogOut } from 'lucide-react';
 import { useState } from 'react';
+import Logo from './image/img1.jpg';
+
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -20,10 +22,14 @@ export function Header() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="text-3xl">🧸</div>
-            <span className="font-bold text-xl text-gray-900">CuddleBear</span>
-          </Link>
+         <Link to="/" className="flex items-center gap-2">
+  <img 
+    src={Logo} 
+    alt="Memo Soft Logo" 
+    className="w-10 h-10 object-contain"
+  />
+  <span className="font-bold text-xl text-gray-900">Memo Soft</span>
+</Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
