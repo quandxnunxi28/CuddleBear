@@ -90,7 +90,11 @@ export function ProductCard({ product }) {
         {/* Image Container - Fixed Height */}
         <div className="w-full h-32 overflow-hidden relative">
           <img
-            src={product.imageUrl || 'https://via.placeholder.com/200'}
+            src={
+  import.meta.env.VITE_API_URL
+    ? `${import.meta.env.VITE_API_URL}/${product.imageUrl.replace(/^\//, '')}`
+    : product.imageUrl
+}
             alt={product.name}
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
           />
