@@ -32,8 +32,8 @@ namespace CuddleBear.Service
                 OrderCode = orderId,
                 Amount = amount,
                 Description = $"ORDER_{orderId}",
-                ReturnUrl = "http://localhost:5173/payment-success",
-                CancelUrl = "http://localhost:5173/payment-cancel"
+                ReturnUrl = "https://shopgau.vercel.app/payment-success",
+                CancelUrl = "https://shopgau.vercel.app/payment-cancel"
             };
 
             return await _client.PaymentRequests.CreateAsync(request);
